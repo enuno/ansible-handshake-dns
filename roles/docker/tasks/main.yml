@@ -1,0 +1,20 @@
+---
+- name: Download Docker installation script
+  ansible.builtin.get_url:
+    url: "{{ docker_install_script }}"
+    dest: /tmp/install-docker.sh
+    mode: '0755'
+    validate_certs: true
+
+- name: Install Docker CE
+  ansible.builtin.command: sh /tmp/install-docker.sh
+  args:
+    creates: /usr/bin/docker
+  register: docker_install
+  notify: Enable docker service
+
+- name: Ensure Docker is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true

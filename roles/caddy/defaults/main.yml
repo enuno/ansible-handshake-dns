@@ -1,0 +1,26 @@
+---
+# Caddy Docker image configuration
+caddy_image: "caddy:latest"
+caddy_image_pull_policy: "always"
+
+# Network configuration
+caddy_network: "{{ docker_network | default('dns_net') }}"
+
+# Port mappings (host:container)
+caddy_ports:
+  - "80:80/tcp"
+  - "443:443/tcp"
+
+# Volume mappings
+caddy_volumes:
+  - "/opt/certs:/etc/caddycerts"
+  - "./templates/Caddyfile.j2:{{ caddy_config_path }}"
+
+# Certificate management
+caddy_config_path: "/etc/caddy/Caddyfile"
+caddy_acme_email: "{{ acme_email | default('admin@example.com') }}"
+caddy_cert_renewal_command: "caddy renew --config {{ caddy_config_path }}"
+
+# DNS-over-HTTPS configuration
+caddy_doh_endpoint: "/dns-query"
+caddy_upstream_dns: "tls://unbound.{{ docker_network | default('dns_net') }}:853"

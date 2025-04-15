@@ -1,0 +1,9 @@
+{
+  email {{ acme_email }}
+  acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+yourdomain.hns {
+  tls /etc/caddycerts/fullchain.pem /etc/caddycerts/privkey.pem
+  reverse_proxy hsd.{{ docker_network }}:53
+}

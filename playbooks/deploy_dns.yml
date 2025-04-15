@@ -1,0 +1,11 @@
+---
+- name: Deploy Secure DNS Infrastructure
+  hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+  roles:
+    - role: docker
+    - role: hsd
+    - role: unbound
+    - role: caddy

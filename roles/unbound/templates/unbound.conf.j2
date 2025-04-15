@@ -1,0 +1,15 @@
+server:
+  interface: 0.0.0.0@53
+  tls-service-pem: /etc/unbound/certs/fullchain.pem
+  tls-service-key: /etc/unbound/certs/privkey.pem
+
+forward-zone:
+  name: "."
+  forward-addr: hsd.{{ docker_network }}@53
+
+forward-zone:
+  name: "*"
+  forward-tls-upstream: yes
+  {% for server in quad9_servers %}
+  forward-addr: {{ server }}
+  {% endfor %}

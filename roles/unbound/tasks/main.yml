@@ -1,0 +1,17 @@
+- name: Configure Quad9 forwarding
+  ansible.builtin.template:
+    src: unbound.conf.j2
+    dest: "{{ unbound_conf_dir }}/quad9.conf"
+    mode: '0644'
+  notify: Restart unbound
+
+- name: Deploy Unbound container
+  community.docker.docker_container:
+    name: unbound
+    image: "{{ unbound_image }}"
+    networks:
+      - name: "{{ docker_network }}"
+    ports:
+      - "53:53/udp"
+      - "853:853/tcp"
+    restart_policy: unless-stopped

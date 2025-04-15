@@ -1,0 +1,3 @@
+hsd_image: ghcr.io/handshake-org/hsd:latest
+hsd_data_dir: /opt/hsd/data
+hsd_hip5_config_path: /root/.hsd/hip5.json

@@ -1,0 +1,14 @@
+---
+- name: Deploy hsd container
+  community.docker.docker_container:
+    name: hsd
+    image: "{{ hsd_image }}"
+    command: --rs-host 0.0.0.0 --rs-port 53 --hip5 --plugins hip5
+    networks:
+      - name: "{{ docker_network }}"
+    volumes:
+      - "{{ hsd_data_dir }}:/root/.hsd"
+      - /opt/hsd/data:/root/.hsd
+      - "./hip5.json.j2:{{ hsd_hip5_config_path }}"
+    restart_policy: unless-stopped
+    state: started

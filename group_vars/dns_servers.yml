@@ -1,0 +1,21 @@
+# Docker configuration
+docker_network: dns_net
+docker_install_script: https://get.docker.com
+
+# DNS configuration
+quad9_servers:
+  - 9.9.9.9@853#dns.quad9.net
+  - 149.112.112.112@853#dns.quad9.net
+
+# Certificate management
+acme_email: admin@yourdomain.hns
+cert_renewal_cron: '0 3 * * *'
+
+# HIP-5 Configuration
+hip5_protocols:
+  - "_eth"
+  - "_ipfs"
+  - "_tor"
+hip5_resolvers:
+  eth: "https://ethresolver.yourdomain.hns"
+  ipfs: "https://ipfsgateway.yourdomain.hns"
