@@ -1,3 +1,11 @@
 collections:
+  # Docker collection for container management
+  # Version 5.0.2 released November 2024
+  # Requires: ansible-core >=2.17.0
   - name: community.docker
+    version: ">=5.0.2,<6.0.0"
+
+  # Crypto collection for certificate and key management
+  # Version 3.0.5 released October 2024
   - name: community.crypto
+    version: ">=3.0.5,<4.0.0"

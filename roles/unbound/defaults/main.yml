@@ -1,2 +1,4 @@
-unbound_image: mvance/unbound:latest
+# Unbound DNS server Docker image version
+# Version 1.21.0 released August 2024 by NLnet Labs
+unbound_image: mvance/unbound:1.21.0
 unbound_conf_dir: /etc/unbound/unbound.conf.d

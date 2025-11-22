@@ -1,6 +1,8 @@
 ---
 # Caddy Docker image configuration
-caddy_image: "caddy:latest"
+# Version 2.10.2 released November 2024
+# Official Caddy v2 with automatic HTTPS and HTTP/2 support
+caddy_image: "caddy:2.10.2"
 caddy_image_pull_policy: "always"
 
 # Network configuration

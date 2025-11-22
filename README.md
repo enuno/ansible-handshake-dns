@@ -25,6 +25,35 @@ An Ansible playbook to deploy a secure, decentralized DNS infrastructure combini
 
 ✅ **Ansible Best Practices** - Role-based structure with linting compliance
 
+## Software Versions
+
+This playbook uses the following stable software versions:
+
+| Component | Version | Release Date | Notes |
+|-----------|---------|--------------|-------|
+| **Handshake (HSD)** | v8.0.0 | Aug 2024 | Requires database migration |
+| **Unbound** | 1.21.0 | Aug 2024 | Latest stable from NLnet Labs |
+| **Caddy** | 2.10.2 | Nov 2024 | Official v2 with auto HTTPS |
+| **community.docker** | >=5.0.2 | Nov 2024 | Requires ansible-core >=2.17.0 |
+| **community.crypto** | >=3.0.5 | Oct 2024 | For certificate management |
+
+### HSD v8.0.0 Migration Requirements
+
+**⚠️ IMPORTANT**: If upgrading from a previous HSD version:
+
+1. **Backup your wallet first**:
+   ```bash
+   docker exec hsd hsd-cli wallet backup --name=backup-$(date +%Y%m%d)
+   ```
+
+2. **First run requires migration flags**:
+   ```bash
+   # The playbook will handle this, but if running manually:
+   hsd --chain-migrate=4 --wallet-migrate=7
+   ```
+
+3. **Migration is automatic** when deploying with this playbook, but allow extra time for the first deployment after upgrade.
+
 ## Architecture
 
 ```
@@ -117,9 +146,12 @@ curl -H 'accept: application/dns-json' \
    - Dedicated Docker bridge network
    - Firewall rules recommended for public exposure
 3. **Regular Updates**
-   ```
-   # Update containers
-   ansible-playbook -i inventory/production playbooks/deploy.yml --tags=update
+   - Container versions are pinned for reproducibility
+   - Review [Software Versions](#software-versions) section before upgrading
+   - Test in non-production environment first
+   ```bash
+   # Deploy with updated versions
+   ansible-playbook -i inventory/production playbooks/deploy.yml
    ```
 
 ## Troubleshooting

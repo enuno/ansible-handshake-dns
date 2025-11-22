@@ -537,3 +537,4 @@ When modifying playbooks, update README with:
 ---
 
 **This document should be reviewed and updated quarterly or when significant project changes occur.**
+Import command and agent standards from docs/claude/
