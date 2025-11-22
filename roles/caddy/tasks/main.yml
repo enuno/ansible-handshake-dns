@@ -1,0 +1,47 @@
+---
+- name: Create Caddy configuration directory
+  ansible.builtin.file:
+    path: /etc/caddy
+    state: directory
+    mode: '0755'
+  tags: [install, configure]
+
+- name: Create Caddy certificate directory
+  ansible.builtin.file:
+    path: /opt/certs
+    state: directory
+    mode: '0755'
+  tags: [install, configure]
+
+- name: Deploy Caddyfile configuration
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ caddy_config_path }}"
+    mode: '0644'
+    validate: 'caddy validate --config %s'
+  tags: [configure]
+  notify: Reload Caddy
+
+- name: Deploy Caddy container
+  community.docker.docker_container:
+    name: caddy
+    image: "{{ caddy_image }}"
+    pull: "{{ caddy_image_pull_policy == 'always' }}"
+    networks:
+      - name: "{{ caddy_network }}"
+    ports: "{{ caddy_ports }}"
+    volumes:
+      - "/etc/caddy:/etc/caddy:ro"
+      - "/opt/certs:/etc/caddycerts"
+    restart_policy: unless-stopped
+    state: started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:2019/metrics || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      com.dns.service: "proxy"
+      com.dns.role: "https"
+  tags: [deploy]

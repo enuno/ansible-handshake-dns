@@ -1,0 +1,70 @@
+---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: yes
+  tags: [install]
+
+- name: Configure UFW defaults
+  community.general.ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: 'incoming', policy: "{{ ufw_default_incoming }}" }
+    - { direction: 'outgoing', policy: "{{ ufw_default_outgoing }}" }
+    - { direction: 'routed', policy: "{{ ufw_default_routed }}" }
+  tags: [configure]
+
+- name: Enable UFW logging
+  community.general.ufw:
+    logging: "{{ ufw_logging }}"
+  tags: [configure]
+
+- name: Allow loopback traffic
+  community.general.ufw:
+    rule: allow
+    interface: lo
+    direction: in
+  tags: [configure]
+
+- name: Configure SSH rate limiting
+  community.general.ufw:
+    rule: limit
+    port: '22'
+    proto: tcp
+    comment: "SSH rate limit"
+  when: ufw_ssh_rate_limit | bool
+  tags: [configure]
+
+- name: Allow required ports
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment }}"
+  loop: "{{ ufw_allowed_ports }}"
+  tags: [configure]
+
+- name: Allow Docker network traffic
+  community.general.ufw:
+    rule: allow
+    from_ip: 172.16.0.0/12
+    comment: "Docker internal network"
+  tags: [configure]
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  tags: [deploy]
+
+- name: Display firewall status
+  ansible.builtin.command: ufw status verbose
+  register: ufw_status
+  changed_when: false
+  tags: [verify]
+
+- name: Show UFW status
+  ansible.builtin.debug:
+    var: ufw_status.stdout_lines
+  tags: [verify]

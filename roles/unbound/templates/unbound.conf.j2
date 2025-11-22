@@ -1,12 +1,61 @@
 server:
+  # Network interfaces
   interface: 0.0.0.0@53
+  interface: 0.0.0.0@853
+
+  # TLS configuration for DNS-over-TLS
   tls-service-pem: /etc/unbound/certs/fullchain.pem
   tls-service-key: /etc/unbound/certs/privkey.pem
 
+  # DNSSEC validation
+  auto-trust-anchor-file: "/var/lib/unbound/root.key"
+  val-log-level: 2
+
+  # Security hardening
+  harden-glue: yes
+  harden-dnssec-stripped: yes
+  harden-referral-path: yes
+  harden-algo-downgrade: yes
+  hide-identity: yes
+  hide-version: yes
+  use-caps-for-id: yes
+
+  # Privacy options
+  qname-minimisation: yes
+  qname-minimisation-strict: yes
+
+  # Performance tuning
+  num-threads: 4
+  msg-cache-size: 128m
+  rrset-cache-size: 256m
+  cache-min-ttl: 60
+  cache-max-ttl: 86400
+  prefetch: yes
+  prefetch-key: yes
+  serve-expired: yes
+  serve-expired-ttl: 86400
+
+  # Rate limiting (DDoS protection)
+  ratelimit: 1000
+  ip-ratelimit: 100
+  ratelimit-slabs: 4
+
+  # Access control
+  access-control: 0.0.0.0/0 allow
+  access-control: ::0/0 allow
+
+  # Logging (disable in production for performance)
+  verbosity: 1
+  log-queries: no
+  log-replies: no
+  log-servfail: yes
+
+# Forward .hns domains to Handshake
 forward-zone:
   name: "."
   forward-addr: hsd.{{ docker_network }}@53
 
+# Forward all other queries to Quad9 with TLS
 forward-zone:
   name: "*"
   forward-tls-upstream: yes

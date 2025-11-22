@@ -4,8 +4,55 @@
   become: true
   vars_files:
     - ../group_vars/all.yml
+
+  pre_tasks:
+    - name: Verify system requirements
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution in ['Ubuntu', 'Debian']
+          - ansible_distribution_major_version | int >= 20
+        fail_msg: "This playbook requires Ubuntu 20.04+ or Debian 11+"
+      tags: [always]
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags: [install, update]
+
   roles:
+    - role: firewall
+      tags: [install, configure, security, firewall]
+
     - role: docker
+      tags: [install, docker]
+
     - role: hsd
+      tags: [install, configure, deploy, hsd, handshake]
+
     - role: unbound
+      tags: [install, configure, deploy, unbound, dns]
+
     - role: caddy
+      tags: [install, configure, deploy, caddy, https]
+
+  post_tasks:
+    - name: Verify all containers are running
+      community.docker.docker_container_info:
+        name: "{{ item }}"
+      loop:
+        - hsd
+        - unbound
+        - caddy
+      register: container_status
+      failed_when: container_status.container.State.Status != "running"
+      tags: [verify, always]
+
+    - name: Display deployment summary
+      ansible.builtin.debug:
+        msg: |
+          DNS Infrastructure Deployment Complete!
+          - Handshake (HSD): {{ container_status.results[0].container.State.Status }}
+          - Unbound DNS: {{ container_status.results[1].container.State.Status }}
+          - Caddy HTTPS: {{ container_status.results[2].container.State.Status }}
+      tags: [verify, always]

@@ -1,0 +1,58 @@
+---
+# Ansible-lint configuration
+
+# Exclude paths
+exclude_paths:
+  - .cache/
+  - .github/
+  - test/
+  - venv/
+  - .venv/
+  - molecule/
+  - .ansible/
+
+# Enable all rules by default
+use_default_rules: true
+
+# Skip specific rules
+skip_list:
+  - 'yaml[line-length]'  # Allow longer lines for readability
+  - 'role-name[path]'    # Allow flexible role naming
+  - 'fqcn[action-core]'  # Allow short module names for core modules
+
+# Warn instead of error for these rules
+warn_list:
+  - experimental  # Warn about experimental features
+  - no-changed-when  # Warn about missing changed_when
+  - command-instead-of-module  # Warn about shell/command usage
+  - var-naming[no-role-prefix]  # Warn about variable naming
+
+# Enable offline mode (no external lookups)
+offline: false
+
+# Set verbosity
+verbosity: 1
+
+# Enable colored output
+colored: true
+
+# Enable progressive mode (stricter rules)
+progressive: false
+
+# Parseable output format (useful for CI/CD)
+parseable: false
+
+# Quiet mode (only show errors)
+quiet: false
+
+# Strict mode (warnings become errors)
+strict: false
+
+# Tags to skip
+skip_tags: []
+
+# Only check specific tags
+tags: []
+
+# Write violations to file
+write_list: []

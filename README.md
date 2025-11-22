@@ -11,19 +11,38 @@ An Ansible playbook to deploy a secure, decentralized DNS infrastructure combini
 
 ## Features
 
+### Core DNS Services
 ✅ **Handshake Full Node** - Authoritative resolution for HNS TLDs
 
 ✅ **Unbound DNS** - Caching resolver with DoT/DoH support
 
 ✅ **Caddy 2** - Modern DoH endpoint with Let's Encrypt automation
 
-✅ **Docker Containers** - Isolated services with compose-free deployment
-
 ✅ **Quad9 Integration** - Secure DNS-over-TLS upstream
 
 ✅ **HIP-5 Protocol** - Cross-protocol resolution (ENS, IPFS, Tor)
 
-✅ **Ansible Best Practices** - Role-based structure with linting compliance
+### Security Features
+🔒 **DNSSEC Validation** - Full DNSSEC support with auto-trust anchors
+
+🔒 **Security Hardening** - Glue protection, referral path validation, algorithm downgrade protection
+
+🔒 **Firewall Configuration** - UFW-based firewall with rate limiting
+
+🔒 **Rate Limiting** - DDoS protection for both DNS and DoH endpoints
+
+🔒 **Container Health Checks** - Automated health monitoring for all services
+
+🔒 **Privacy Features** - Query minimization, identity hiding
+
+### Operational Excellence
+📊 **Automated Backups** - Daily backups of wallets, configs, and certificates
+
+📊 **CI/CD Pipeline** - GitHub Actions for linting, syntax checking, and security scanning
+
+📊 **Comprehensive Logging** - Structured logging with performance profiling
+
+📊 **Ansible Best Practices** - Tags, pre/post-tasks, validation, and error handling
 
 ## Software Versions
 
@@ -95,8 +114,40 @@ nano group_vars/all.yml
 # Install dependencies
 ansible-galaxy install -r requirements.yml
 
-# Deploy infrastructure
-ansible-playbook -i inventory/production playbooks/deploy.yml
+# Deploy full infrastructure
+ansible-playbook -i inventory/production playbooks/deploy_dns.yml
+
+# Deploy specific components using tags
+ansible-playbook -i inventory/production playbooks/deploy_dns.yml --tags "firewall,docker,hsd"
+
+# Run only configuration changes
+ansible-playbook -i inventory/production playbooks/deploy_dns.yml --tags "configure"
+```
+
+### Selective Deployment with Tags
+
+The playbook supports granular control through tags:
+
+```bash
+# Available tags:
+# - install: Install packages and dependencies
+# - configure: Configure services
+# - deploy: Deploy containers
+# - verify: Verify deployment
+# - firewall: Firewall configuration only
+# - docker: Docker setup only
+# - hsd, unbound, caddy: Individual services
+# - security: Security-related tasks
+
+# Examples:
+# Deploy only DNS services (skip firewall)
+ansible-playbook -i inventory/production playbooks/deploy_dns.yml --skip-tags "firewall"
+
+# Update configurations without reinstalling
+ansible-playbook -i inventory/production playbooks/deploy_dns.yml --tags "configure"
+
+# Verify deployment health
+ansible-playbook -i inventory/production playbooks/deploy_dns.yml --tags "verify"
 ```
 
 ## Configuration
@@ -122,6 +173,67 @@ hip5_resolvers:
 ```
 
 **Note**: Replace placeholder values (`yourusername`, `yourdomain.hns`, etc.) with your actual information before use.
+
+### Optional: Backup Configuration
+
+To enable automated backups, add a backup role to your playbook:
+
+```yaml
+# In playbooks/deploy_dns.yml, add:
+- role: backup
+  tags: [backup, optional]
+```
+
+Configure backup settings in `group_vars/dns_servers.yml`:
+
+```yaml
+# Backup configuration
+backup_dir: /opt/backups/dns
+backup_retention_days: 30
+backup_hsd_wallet: true
+backup_configurations: true
+backup_certificates: true
+
+# Optional remote backup
+backup_remote_enabled: false
+backup_remote_type: "s3"  # or "rsync"
+backup_remote_destination: "s3://my-bucket/dns-backups"
+```
+
+Run manual backup:
+```bash
+/usr/local/bin/dns-backup.sh
+```
+
+### Security Configuration
+
+#### Firewall Rules
+
+The firewall role automatically configures UFW with:
+- Allow: 22/tcp (SSH, rate-limited), 53/udp+tcp (DNS), 443/tcp (HTTPS), 853/tcp (DoT)
+- Deny: All other incoming traffic
+- Rate limiting on SSH to prevent brute force attacks
+
+#### DNSSEC Validation
+
+DNSSEC is enabled by default in Unbound with:
+- Auto-trust anchor updates
+- Strict validation for signed zones
+- Protection against algorithm downgrades
+- Glue record validation
+
+Verify DNSSEC is working:
+```bash
+dig @your-server dnssec.works +dnssec
+# Look for "ad" flag in the response
+```
+
+#### Rate Limiting
+
+Protection against DDoS attacks:
+- **Unbound**: 1000 queries/sec per IP, 100 total IP connections
+- **Caddy**: 100 requests/minute per IP for DoH endpoint
+- **UFW**: Connection rate limiting on SSH
 
 ## Verification
 
@@ -174,13 +286,83 @@ curl -v -H 'accept: application/dns-message' \
   --data-binary @query.bin https://your-server/dns-query
 ```
 
+## Development & CI/CD
+
+### Continuous Integration
+
+This project includes a GitHub Actions CI/CD pipeline that automatically:
+- Lints all Ansible playbooks with `ansible-lint`
+- Validates YAML syntax with `yamllint`
+- Performs syntax checking on playbooks
+- Runs security scans with Trivy
+- Executes dry-run deployments in check mode
+
+The CI pipeline runs on:
+- All pushes to `main` and `develop` branches
+- All pull requests
+- Manual workflow dispatch
+
+### Local Development
+
+Before committing, run local checks:
+
+```bash
+# Install development dependencies
+pip install ansible ansible-lint yamllint
+
+# Run linting
+ansible-lint playbooks/
+yamllint .
+
+# Syntax check
+ansible-playbook playbooks/deploy_dns.yml --syntax-check
+
+# Dry run (check mode)
+ansible-playbook playbooks/deploy_dns.yml --check --diff
+```
+
+### Container Health Monitoring
+
+All containers include health checks that run every 30 seconds:
+
+```bash
+# Check container health status
+docker ps --format "table {{.Names}}\t{{.Status}}"
+
+# View health check logs
+docker inspect hsd --format='{{json .State.Health}}' | jq
+docker inspect unbound --format='{{json .State.Health}}' | jq
+docker inspect caddy --format='{{json .State.Health}}' | jq
+```
+
+### Logging
+
+Ansible execution logs are stored in `ansible.log` with:
+- Task timing information (profile_tasks callback)
+- Total execution time (timer callback)
+- All task results and changes
+
+Container logs:
+```bash
+# View container logs
+docker logs -f hsd
+docker logs -f unbound
+docker logs -f caddy
+
+# Follow all logs
+docker logs -f --tail=100 hsd unbound caddy
+```
+
 ## Contributing
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/improvement`)
-3. Commit changes (`git commit -am 'Add some feature'`)
-4. Push to branch (`git push origin feature/improvement`)
-5. Open Pull Request
+3. Run local linting and tests
+4. Commit changes (`git commit -am 'Add some feature'`)
+5. Push to branch (`git push origin feature/improvement`)
+6. Open Pull Request (CI will run automatically)
+
+All contributions must pass CI checks before merging.
 
 ## License
 

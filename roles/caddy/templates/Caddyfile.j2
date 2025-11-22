@@ -1,8 +1,80 @@
 {
   email {{ acme_email }}
   acme_ca https://acme-v02.api.letsencrypt.org/directory
+
+  # Admin API for metrics and health checks
+  admin 0.0.0.0:2019
+
+  # Global rate limiting
+  servers {
+    metrics
+  }
 }
 
+# DNS-over-HTTPS endpoint
+{{ caddy_doh_domain | default('dns.yourdomain.com') }} {
+  # TLS configuration
+  tls {{ caddy_acme_email }} {
+    protocols tls1.2 tls1.3
+  }
+
+  # Rate limiting for DoH endpoint
+  rate_limit {
+    zone doh {
+      key {remote_host}
+      events 100
+      window 1m
+    }
+  }
+
+  # DoH endpoint
+  {{ caddy_doh_endpoint }} {
+    reverse_proxy unbound.{{ docker_network }}:853 {
+      transport http {
+        tls
+        tls_insecure_skip_verify
+      }
+
+      # Health check
+      health_uri /
+      health_interval 30s
+      health_timeout 10s
+
+      # Load balancing
+      lb_policy least_conn
+      lb_try_duration 5s
+    }
+
+    # Security headers
+    header {
+      Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      X-Content-Type-Options "nosniff"
+      X-Frame-Options "DENY"
+      Referrer-Policy "no-referrer"
+    }
+
+    # Request size limit (prevent DDoS)
+    request_body {
+      max_size 1MB
+    }
+  }
+
+  # Health check endpoint
+  handle /health {
+    respond "OK" 200
+  }
+
+  # Metrics endpoint (internal only)
+  @metrics {
+    path /metrics
+    remote_ip private_ranges
+  }
+  handle @metrics {
+    reverse_proxy localhost:2019
+  }
+}
+
+# Legacy HNS endpoint (optional)
 yourdomain.hns {
   tls /etc/caddycerts/fullchain.pem /etc/caddycerts/privkey.pem
   reverse_proxy hsd.{{ docker_network }}:53

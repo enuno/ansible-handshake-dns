@@ -1,0 +1,65 @@
+---
+- name: Install backup dependencies
+  ansible.builtin.apt:
+    name:
+      - rsync
+      - gzip
+      - cron
+    state: present
+  tags: [install]
+
+- name: Create backup directory
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    mode: '0700'
+    owner: root
+    group: root
+  tags: [configure]
+
+- name: Create backup script
+  ansible.builtin.template:
+    src: backup.sh.j2
+    dest: /usr/local/bin/dns-backup.sh
+    mode: '0750'
+    owner: root
+    group: root
+  tags: [configure]
+
+- name: Schedule automated backups
+  ansible.builtin.cron:
+    name: "DNS Infrastructure Backup"
+    minute: "{{ backup_schedule.minute }}"
+    hour: "{{ backup_schedule.hour }}"
+    day: "{{ backup_schedule.day }}"
+    month: "{{ backup_schedule.month }}"
+    weekday: "{{ backup_schedule.weekday }}"
+    job: "/usr/local/bin/dns-backup.sh >> /var/log/dns-backup.log 2>&1"
+    user: root
+  tags: [configure]
+
+- name: Create backup cleanup script
+  ansible.builtin.template:
+    src: cleanup.sh.j2
+    dest: /usr/local/bin/dns-backup-cleanup.sh
+    mode: '0750'
+    owner: root
+    group: root
+  tags: [configure]
+
+- name: Schedule backup cleanup
+  ansible.builtin.cron:
+    name: "DNS Backup Cleanup"
+    minute: "30"
+    hour: "3"
+    day: "*"
+    month: "*"
+    weekday: "0"
+    job: "/usr/local/bin/dns-backup-cleanup.sh >> /var/log/dns-backup.log 2>&1"
+    user: root
+  tags: [configure]
+
+- name: Run initial backup
+  ansible.builtin.command: /usr/local/bin/dns-backup.sh
+  changed_when: true
+  tags: [deploy, never]  # Only run when explicitly tagged

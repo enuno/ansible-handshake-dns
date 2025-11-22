@@ -1,8 +1,16 @@
+- name: Create Unbound configuration directory
+  ansible.builtin.file:
+    path: "{{ unbound_conf_dir }}"
+    state: directory
+    mode: '0755'
+  tags: [install, configure]
+
 - name: Configure Quad9 forwarding
   ansible.builtin.template:
     src: unbound.conf.j2
     dest: "{{ unbound_conf_dir }}/quad9.conf"
     mode: '0644'
+  tags: [configure]
   notify: Restart unbound
 
 - name: Deploy Unbound container
@@ -14,4 +22,17 @@
     ports:
       - "53:53/udp"
       - "853:853/tcp"
+    volumes:
+      - "{{ unbound_conf_dir }}:/etc/unbound/unbound.conf.d:ro"
     restart_policy: unless-stopped
+    state: started
+    healthcheck:
+      test: ["CMD-SHELL", "drill @127.0.0.1 cloudflare.com || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      com.dns.service: "resolver"
+      com.dns.role: "dns"
+  tags: [deploy]

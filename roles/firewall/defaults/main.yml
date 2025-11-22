@@ -1,0 +1,24 @@
+---
+# Firewall configuration defaults
+
+# UFW default policies
+ufw_default_incoming: deny
+ufw_default_outgoing: allow
+ufw_default_routed: deny
+
+# Allowed ports for DNS infrastructure
+ufw_allowed_ports:
+  - { port: 22, proto: tcp, comment: "SSH" }
+  - { port: 53, proto: udp, comment: "DNS" }
+  - { port: 53, proto: tcp, comment: "DNS TCP" }
+  - { port: 443, proto: tcp, comment: "HTTPS/DoH" }
+  - { port: 853, proto: tcp, comment: "DNS-over-TLS" }
+
+# Rate limiting for SSH (prevent brute force)
+ufw_ssh_rate_limit: true
+
+# Logging level (off, low, medium, high, full)
+ufw_logging: low
+
+# Enable IPv6
+ufw_ipv6: yes

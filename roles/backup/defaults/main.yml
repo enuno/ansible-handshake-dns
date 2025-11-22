@@ -1,0 +1,32 @@
+---
+# Backup configuration defaults
+
+# Backup directory
+backup_dir: /opt/backups/dns
+
+# Retention policy (days)
+backup_retention_days: 30
+
+# Backup schedule (cron format)
+backup_schedule:
+  minute: "0"
+  hour: "2"
+  day: "*"
+  month: "*"
+  weekday: "*"
+
+# What to backup
+backup_hsd_wallet: true
+backup_hsd_blockchain: false  # Very large, usually not needed
+backup_configurations: true
+backup_certificates: true
+
+# Compression
+backup_compress: true
+backup_compression_level: 6
+
+# Remote backup (optional)
+backup_remote_enabled: false
+backup_remote_type: "s3"  # s3, rsync, or scp
+backup_remote_destination: ""
+backup_remote_credentials: ""
