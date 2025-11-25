@@ -2,6 +2,7 @@
 
 ![Ansible](https://img.shields.io/badge/Ansible-2.10+-green)
 ![Docker](https://img.shields.io/badge/Docker-20.10+-blue)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/enuno/ansible-handshake-dns)
 
 An Ansible playbook to deploy a secure, decentralized DNS infrastructure combining:
 - **Handshake (HNS)** blockchain for decentralized TLD resolution
